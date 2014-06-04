@@ -1,7 +1,7 @@
 name:                ekg-statsd-wai
 version:             0.1.0.0
 synopsis:            Integrates a WAI application with EKG + Statsd
-license:             Apache v2.0
+license:             Apache
 license-file:        LICENSE
 author:              Alejandro Cabrera
 maintainer:          cpp.cabrera@gmail.com
