@@ -12,20 +12,23 @@ import System.Remote.Monitoring.Statsd
 import System.Metrics
 import qualified System.Metrics.Counter as Counter
 
-type CounterMap = M.Map T.Text (IO Counter.Counter)
+type CounterMap = M.Map T.Text Counter.Counter
+type Routes = [T.Text]
 
 middleware :: CounterMap -> Application -> Request -> IO Response
 middleware counters app req = do
   path <- return $ T.append "path." $ (decodeUtf8 . rawPathInfo) req
-  _ <- case (M.lookup path counters) of 
-    (Just c) -> fmap Counter.inc c -- this line triggers a crash, but it may be because of laziness (late counter registration)
-    Nothing -> (return . return) ()
+
+  _ <- case M.lookup path counters of
+        Just c -> Counter.inc c
+        Nothing -> return ()
+
   app req
 
-application :: Request -> IO Response 
+application :: Request -> IO Response
 application _ = return $ responseLBS status200 [("Content-Type", "text/plain")] "Hello, world"
 
-routes :: [T.Text]
+routes :: Routes
 routes = map (T.append "path.") [
     "/serversCollection",
     "/servers",
@@ -38,16 +41,15 @@ routes = map (T.append "path.") [
     "/blockBatch"
   ]
 
-counterMap :: Store -> CounterMap
-counterMap s = M.fromList $ zip routes counters
-  where 
-    counters :: [IO Counter.Counter]
-    counters = map (\k -> createCounter k s) routes
+counterMap :: Routes -> Store -> IO CounterMap
+counterMap routes' store = do
+  counters <- mapM (`createCounter` store) routes'
+  return $ M.fromList $ zip routes' counters
 
 main :: IO ()
 main = do
   serv <- forkServer "localhost" 8000
   store <- return $ serverMetricStore serv
-  counters <- return $ counterMap store
+  counters <- counterMap routes store
   _ <- forkStatsd defaultStatsdOptions store
   run 3000 $ middleware counters application
