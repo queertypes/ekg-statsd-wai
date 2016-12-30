@@ -9,8 +9,8 @@ description:
 
 license:             Apache
 license-file:        LICENSE
-author:              Alejandro Cabrera
-maintainer:          cpp.cabrera@gmail.com
+author:              Allele Dev
+maintainer:          allele.dev@gmail.com
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.20
